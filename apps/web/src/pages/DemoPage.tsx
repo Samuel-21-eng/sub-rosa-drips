@@ -825,7 +825,12 @@ export function DemoPage({
   const [mode, setMode] = useState<DemoMode>("live");
   const [confettiTick, setConfettiTick] = useState(0);
   const session = useRoundSession(active);
-  const targetRound = DEMO_TRACE.meta.revealRound;
+  const sidebarDrand =
+    mode === "evidence"
+      ? { mode: "proof" as const, targetRound: DEMO_TRACE.meta.revealRound }
+      : session.roundId != null
+        ? { mode: "live-round" as const, targetRound: session.targetRound }
+        : { mode: "idle" as const, targetRound: null };
 
   return (
     <main className="app-page">
@@ -879,9 +884,7 @@ export function DemoPage({
             </>
           ) : null}
 
-          <div className="case-nav-footer">
-            <DrandCountdownChip targetRound={targetRound} />
-          </div>
+          <DrandCountdownChip mode={sidebarDrand.mode} targetRound={sidebarDrand.targetRound} />
         </aside>
 
         <AnimatePresence mode="wait">

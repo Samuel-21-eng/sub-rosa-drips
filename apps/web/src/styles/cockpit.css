@@ -18,17 +18,17 @@
 .case-nav {
   position: sticky;
   top: 16px;
+  align-self: start;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  width: 100%;
   padding: 16px;
   border: 1px solid var(--line-1);
   border-radius: var(--radius-lg);
   background: var(--surface-1);
   backdrop-filter: blur(20px);
   box-shadow: var(--shadow-md);
-  max-height: calc(100vh - 32px);
-  overflow: auto;
 }
 
 .case-nav .brand-link {
@@ -147,7 +147,105 @@
   border-top: 1px solid var(--line-1);
 }
 
-/* Drand chip in sidebar */
+/* Compact Drand status in sidebar footer — not a big floating card */
+.drand-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-1);
+  border-radius: 10px;
+  background: var(--surface-0);
+}
+
+.drand-footer-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.drand-footer-copy strong {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.drand-footer-copy small {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+}
+
+.drand-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--faint);
+}
+
+.drand-footer.idle .drand-dot {
+  background: var(--muted);
+}
+
+.drand-footer.syncing .drand-dot {
+  background: var(--muted);
+  animation: drand-pulse 1.4s var(--ease-in-out) infinite;
+}
+
+.drand-footer.waiting {
+  border-color: rgba(91, 108, 255, 0.28);
+  background: rgba(91, 108, 255, 0.05);
+}
+
+.drand-footer.waiting .drand-dot {
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green-glow);
+  animation: drand-pulse 1.6s var(--ease-in-out) infinite;
+}
+
+.drand-footer.waiting small {
+  color: rgba(91, 108, 255, 0.85);
+}
+
+.drand-footer.published {
+  border-color: rgba(91, 108, 255, 0.4);
+  background: rgba(91, 108, 255, 0.08);
+}
+
+.drand-footer.published .drand-dot {
+  background: var(--green);
+  box-shadow: 0 0 10px var(--green-glow);
+}
+
+.drand-footer.published small {
+  color: var(--green);
+}
+
+.drand-footer.warn {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.drand-footer.warn .drand-dot {
+  background: var(--muted);
+}
+
+.drand-footer.warn small {
+  color: var(--faint);
+}
+
+@keyframes drand-pulse {
+  0%, 100% { opacity: 0.75; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+/* Legacy .drand-chip — kept for evidence panels that may still reference it */
 .drand-chip {
   display: grid;
   gap: 4px;
