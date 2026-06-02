@@ -17,12 +17,13 @@ export const DEFAULT_ROUND_ID = import.meta.env.VITE_ROUND_ID
   ? BigInt(import.meta.env.VITE_ROUND_ID)
   : null;
 
-// Commit window length is LIVE_REVEAL_IN_SECONDS - LIVE_COMMIT_CLOSE_BEFORE_REVEAL_SECONDS.
-// Keep ~10s buffer between commit close and Drand R so reveals never race the beacon.
-export const LIVE_REVEAL_IN_SECONDS = 37;
+/** Seconds between commit deadline and Drand round R (the “Wait for Drand R” UI phase). */
 export const LIVE_COMMIT_CLOSE_BEFORE_REVEAL_SECONDS = 10;
-export const LIVE_COMMIT_WINDOW_SECONDS =
-  LIVE_REVEAL_IN_SECONDS - LIVE_COMMIT_CLOSE_BEFORE_REVEAL_SECONDS;
+/** Default commit window when createRound is called without a preset. */
+export const LIVE_COMMIT_WINDOW_SECONDS = 27;
+/** Default seconds from round creation until Drand R (~commit window + wait above). */
+export const LIVE_REVEAL_IN_SECONDS =
+  LIVE_COMMIT_WINDOW_SECONDS + LIVE_COMMIT_CLOSE_BEFORE_REVEAL_SECONDS;
 export const LIVE_REVEAL_WINDOW_AFTER_REVEAL_SECONDS = 240;
 
 /**

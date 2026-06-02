@@ -203,11 +203,21 @@ function PhaseGuide(props: {
     timerValue = String(revealedCount);
     ctaLabel = "Round complete";
     ctaDisabled = true;
-  } else if (committed && !drandGate.published) {
+  } else if (committed && !commitClosed && !drandGate.published) {
+    tone = "wait";
+    eyebrow = "Sealed on-chain";
+    title = "Entry locked";
+    detail =
+      "Your bid is sealed. After the commit window closes, Drand R publishes in about 10 seconds.";
+    timerLabel = "Commit closes in";
+    timerValue = formatCountdown(commitSeconds);
+    ctaLabel = "Waiting for window";
+    ctaDisabled = true;
+  } else if (committed && commitClosed && !drandGate.published) {
     tone = "wait";
     eyebrow = "Sealed · waiting for R";
     title = "Wait for Drand R";
-    detail = "Your bid is on-chain and undecryptable. Reveal unlocks the moment R publishes.";
+    detail = "Commit window closed. Reveal unlocks the moment round R publishes (~10s).";
     timerLabel = "Reveal in";
     timerValue = drandGate.loading ? "…" : formatCountdown(drandGate.secondsRemaining);
     ctaLabel = "Waiting for R";
