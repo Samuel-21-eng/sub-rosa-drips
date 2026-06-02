@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { AttackStep } from "../lib/demoTypes";
+import { useToast } from "../ui/Toast";
 
 function StepList({ steps, variant }: { steps: AttackStep[]; variant: "bad" | "good" }) {
   return (
@@ -18,6 +19,7 @@ function StepList({ steps, variant }: { steps: AttackStep[]; variant: "bad" | "g
 }
 
 export function AttackDemo() {
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [sealOff, setSealOff] = useState<AttackStep[] | null>(null);
   const [sealOn, setSealOn] = useState<AttackStep[] | null>(null);
@@ -25,6 +27,7 @@ export function AttackDemo() {
   const [err, setErr] = useState<string | null>(null);
 
   async function run() {
+    const workingId = toast.push("working", "Running tlock comparison…");
     setLoading(true);
     setErr(null);
     try {
@@ -33,8 +36,17 @@ export function AttackDemo() {
       setSealOff(res.sealOff);
       setSealOn(res.sealOn);
       setRound(res.revealRound);
+      toast.dismiss(workingId);
+      toast.push(
+        "success",
+        "Attack demo complete",
+        `Seal-off leaks early · seal-on waits for R=${res.revealRound.toLocaleString()}`,
+      );
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
+      const msg = e instanceof Error ? e.message : String(e);
+      setErr(msg);
+      toast.dismiss(workingId);
+      toast.push("error", "Attack demo failed", msg);
     } finally {
       setLoading(false);
     }

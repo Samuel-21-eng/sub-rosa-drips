@@ -1,13 +1,20 @@
 import { useState } from "react";
 import { CAP_SAFETY_COPY } from "../demo/trace";
 import type { CapDemoResult } from "../lib/demoTypes";
+import { useToast } from "../ui/Toast";
 
 export function MandateCapLab() {
+  const toast = useToast();
   const [results, setResults] = useState<CapDemoResult[] | null>(null);
 
   async function run() {
+    const workingId = toast.push("working", "Running cap scenarios…");
     const { runCapSafetyDemos } = await import("../lib/demoActions");
-    setResults(runCapSafetyDemos());
+    const next = runCapSafetyDemos();
+    setResults(next);
+    const passed = next.filter((r) => r.pass).length;
+    toast.dismiss(workingId);
+    toast.push("success", "Cap lab finished", `${passed}/${next.length} scenarios passed as expected`);
   }
 
   return (

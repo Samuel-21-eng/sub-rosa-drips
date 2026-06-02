@@ -1,0 +1,64 @@
+/* Design tokens — Sub Rosa premium theme */
+:root {
+  --bg-0: #04060a;
+  --bg-1: #070a10;
+  --bg-2: #0b0f17;
+  --surface-0: rgba(13, 17, 24, 0.72);
+  --surface-1: rgba(18, 23, 31, 0.82);
+  --surface-2: rgba(24, 30, 40, 0.88);
+  --surface-3: rgba(32, 40, 52, 0.94);
+  --surface-glass: rgba(11, 16, 24, 0.55);
+
+  --line-0: rgba(255, 255, 255, 0.06);
+  --line-1: rgba(255, 255, 255, 0.1);
+  --line-2: rgba(255, 255, 255, 0.16);
+  --line-strong: rgba(255, 255, 255, 0.24);
+
+  --ink: #f4f3ee;
+  --ink-2: #d8d6cc;
+  --muted: #9aa0aa;
+  --faint: #6a6f78;
+  --cream: #ece4d4;
+
+  --green: #6ef5b0;
+  --green-2: #3dd68c;
+  --green-deep: #14a368;
+  --green-glow: rgba(110, 245, 176, 0.32);
+
+  --violet: #b18cff;
+  --violet-glow: rgba(177, 140, 255, 0.3);
+  --amber: #ffd36a;
+  --amber-glow: rgba(255, 211, 106, 0.3);
+  --red: #ff7b72;
+  --red-glow: rgba(255, 123, 114, 0.3);
+  --cyan: #5be0ff;
+  --cyan-glow: rgba(91, 224, 255, 0.3);
+
+  --grad-aurora:
+    radial-gradient(ellipse 70% 55% at 18% 0%, rgba(110, 245, 176, 0.18), transparent 60%),
+    radial-gradient(ellipse 80% 60% at 100% 0%, rgba(177, 140, 255, 0.14), transparent 65%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(91, 224, 255, 0.08), transparent 60%);
+
+  --grad-cta: linear-gradient(135deg, #79f9b6 0%, #3dd68c 50%, #16b873 100%);
+  --grad-violet: linear-gradient(135deg, #c5a4ff 0%, #8b5cff 100%);
+  --grad-warning: linear-gradient(135deg, #ffe39a 0%, #ffb84a 100%);
+
+  --font: "Instrument Sans", system-ui, sans-serif;
+  --display: "Space Grotesk", "Instrument Sans", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 28px 80px rgba(0, 0, 0, 0.5);
+  --shadow-glow-green: 0 0 0 1px rgba(110, 245, 176, 0.32), 0 16px 48px rgba(110, 245, 176, 0.18);
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
