@@ -30,15 +30,15 @@
   --faint: #5e6670;
   --cream: #ece4d4;
 
-  /* Single brand accent */
-  --green: #6ef5b0;
-  --green-2: #3dd68c;
-  --green-deep: #14a368;
-  --green-dim: rgba(110, 245, 176, 0.55);
-  --green-soft: rgba(110, 245, 176, 0.12);
-  --green-glow: rgba(110, 245, 176, 0.28);
+  /* Single brand accent — indigo-iris (blue/violet mix) */
+  --green: #7c70ff;
+  --green-2: #5b54e6;
+  --green-deep: #3d36b3;
+  --green-dim: rgba(124, 112, 255, 0.55);
+  --green-soft: rgba(124, 112, 255, 0.12);
+  --green-glow: rgba(124, 112, 255, 0.32);
 
-  /* Legacy semantic aliases — all collapse onto neutral/green tones so the
+  /* Legacy semantic aliases — all collapse onto neutral/brand tones so the
    * palette stays at 3 colors. Do not introduce new hues here. */
   --amber: var(--green);
   --amber-glow: var(--green-glow);
@@ -54,10 +54,10 @@
   --red-glow: rgba(255, 255, 255, 0.06);
 
   --grad-aurora:
-    radial-gradient(ellipse 70% 55% at 18% 0%, rgba(110, 245, 176, 0.14), transparent 60%),
-    radial-gradient(ellipse 80% 60% at 100% 0%, rgba(110, 245, 176, 0.06), transparent 65%);
+    radial-gradient(ellipse 70% 55% at 18% 0%, rgba(124, 112, 255, 0.14), transparent 60%),
+    radial-gradient(ellipse 80% 60% at 100% 0%, rgba(124, 112, 255, 0.06), transparent 65%);
 
-  --grad-cta: linear-gradient(135deg, #79f9b6 0%, #3dd68c 50%, #16b873 100%);
+  --grad-cta: linear-gradient(135deg, #9f95ff 0%, #7c70ff 50%, #5b54e6 100%);
 
   --font: "Instrument Sans", system-ui, sans-serif;
   --display: "Space Grotesk", "Instrument Sans", system-ui, sans-serif;

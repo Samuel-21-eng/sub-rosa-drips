@@ -89,7 +89,7 @@ code {
 }
 
 ::selection {
-  color: #021a0d;
+  color: #ffffff;
   background: var(--green);
 }
 
