@@ -93,6 +93,7 @@ function PhaseGuide(props: {
   joinRound: (id: string) => void;
   commitEntry: () => void;
   openAndReveal: () => void;
+  suggestedRoundId: bigint | null;
 }) {
   const {
     useCase,
@@ -112,6 +113,7 @@ function PhaseGuide(props: {
     joinRound,
     commitEntry,
     openAndReveal,
+    suggestedRoundId,
   } = props;
   const [joinId, setJoinId] = useState("");
   const [duration, setDuration] = useState<number>(DEFAULT_COMMIT_DURATION_SECONDS);
@@ -404,7 +406,7 @@ function PhaseGuide(props: {
                   type="text"
                   inputMode="numeric"
                   pattern="[0-9]*"
-                  placeholder="round id"
+                  placeholder={suggestedRoundId != null ? String(suggestedRoundId) : "round id"}
                   value={joinId}
                   onChange={(e) => setJoinId(e.target.value.replace(/[^0-9]/g, ""))}
                   onKeyDown={(e) => {
@@ -639,6 +641,7 @@ function LivePanel({
         connect={() => void connect()}
         createRound={(duration) => void createRound(duration)}
         joinRound={(id) => void joinRound(id)}
+        suggestedRoundId={DEFAULT_ROUND_ID}
         commitEntry={() => void commitEntry()}
         openAndReveal={() => void openAndReveal()}
       />
@@ -821,7 +824,7 @@ export function DemoPage({
 }) {
   const [mode, setMode] = useState<DemoMode>("live");
   const [confettiTick, setConfettiTick] = useState(0);
-  const session = useRoundSession(active, DEFAULT_ROUND_ID);
+  const session = useRoundSession(active);
   const targetRound = DEMO_TRACE.meta.revealRound;
 
   return (

@@ -65,22 +65,22 @@ function emptySession(roundId: bigint | null = null): CaseSession {
   };
 }
 
-function initialSessions(defaultRoundId: bigint | null): Record<UseCaseId, CaseSession> {
+function initialSessions(): Record<UseCaseId, CaseSession> {
   return {
-    dao: emptySession(defaultRoundId),
+    dao: emptySession(),
     grants: emptySession(),
     bounty: emptySession(),
     allocation: emptySession(),
   };
 }
 
-export function useRoundSession(active: UseCase, defaultRoundId: bigint | null) {
+export function useRoundSession(active: UseCase) {
   const toast = useToast();
   const [address, setAddress] = useState<string | null>(null);
   const [walletStatus, setWalletStatus] = useState("Connect a funded Stellar testnet wallet.");
   const [entryValue, setEntryValue] = useState(active.defaultValue);
   const [sessions, setSessions] = useState<Record<UseCaseId, CaseSession>>(() =>
-    initialSessions(defaultRoundId),
+    initialSessions(),
   );
   const [status, setStatus] = useState<ActionStatus>("idle");
   const [revealProgress, setRevealProgress] = useState<{ current: number; total: number } | null>(
