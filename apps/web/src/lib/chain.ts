@@ -52,6 +52,9 @@ export function displayError(error: unknown): string {
   if (message.includes("Contract, #10")) {
     return "Commit window closed. Create a fresh round, then commit before Drand reaches reveal.";
   }
+  if (message.includes("Contract, #15")) {
+    return "Reveal window closed for this round. Create a new round and open + reveal soon after Drand R (within ~4 minutes).";
+  }
   if (message.includes("got 425") || message.includes("Error response fetching")) {
     return "Drand R is not published yet. Wait for the countdown, then open + reveal.";
   }
