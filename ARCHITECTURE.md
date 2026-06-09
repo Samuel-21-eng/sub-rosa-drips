@@ -141,6 +141,83 @@ Production mapping (Passkey / Smart Account Kit / OZ Relayer): [docs/ECOSYSTEM.m
 
 ---
 
+## Planned Stellar Wallets Kit integration
+
+This section describes the planned **Stellar Wallets Kit** integration for the
+SCF Integration Track. It does not describe a completed integration and does not
+replace the existing proof paths.
+
+### Current state
+
+- The live end-user flow in `apps/web` connects directly to Freighter through
+  `@stellar/freighter-api`.
+- `apps/web/src/lib/chain.ts` adapts Freighter transaction and authorization
+  signing to the generated `RoundContract` client.
+- Agent and keeper proofs continue to use session keys and direct Soroban RPC;
+  they do not depend on a browser wallet.
+- The embedded jury trace and existing testnet/mainnet proof artifacts remain
+  unchanged.
+
+### Target state
+
+Stellar Wallets Kit will become the browser-wallet connection and signing layer
+for the end-user application. The contract, generated bindings, tlock package,
+keeper, and settlement rules remain wallet-agnostic.
+
+```text
+Supported Stellar wallet
+        │
+        ▼
+Stellar Wallets Kit
+  connect / select / sign
+        │
+        ▼
+apps/web wallet adapter
+        │
+        ▼
+RoundContract client ──► Soroban RPC ──► contracts/round
+```
+
+The adapter will expose the signer interface already consumed by
+`RoundContract`: the selected public address, transaction signing, and Soroban
+authorization-entry signing. This keeps wallet-specific behavior outside the
+protocol and SDK layers.
+
+### End-user transaction flows
+
+| Flow | Wallets Kit role | Existing protocol behavior retained |
+| --- | --- | --- |
+| Connect | Discover/select a supported wallet and expose its active Stellar address | No contract call |
+| Create round | Sign the operator transaction | Contract stores deadlines, Drand round, clearing rule, and auditor key |
+| Commit | Sign the bidder transaction after the browser seals the value with `packages/tlock` | Contract locks SAC escrow and stores commitment/ciphertext |
+| Reveal / clear / settle | Allow an authorized user to submit permissionless lifecycle calls when desired | Keeper can still perform these calls without a browser wallet |
+| Read status | Provide the active address for user-specific UI state | Reads continue through Soroban RPC |
+
+The initial target is standardized multi-wallet support for wallets exposed by
+Stellar Wallets Kit, including Freighter, xBull, Albedo, and Lobstr where their
+supported signing capabilities satisfy the required Soroban flows. Unsupported
+wallet/capability combinations will be surfaced explicitly rather than falling
+back to hidden keys.
+
+### Migration and verification plan
+
+1. Add a Wallets Kit adapter beside the current Freighter adapter.
+2. Verify connection, network selection, transaction signing, and Soroban
+   authorization-entry signing against the existing `RoundContract` interface.
+3. Move the end-user UI to the Wallets Kit adapter after parity is proven.
+4. Retain direct RPC/session-key paths for agents, keepers, automated tests, and
+   operational recovery.
+5. Test round creation, sealed commit, reveal readiness, settlement, rejection,
+   reconnect, and wrong-network states on Stellar testnet.
+6. Publish the supported-wallet matrix and test evidence before enabling the
+   adapter in the production mainnet web app.
+
+This integration changes how end users authorize transactions; it does not
+change the sealed-round state machine, Drand trust model, or SAC settlement
+logic.
+
+---
+
 ## Demo and proof artifacts
 
 | Network | Contract | UI / trace |
