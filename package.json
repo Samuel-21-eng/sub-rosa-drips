@@ -48,6 +48,7 @@
     "web:typecheck": "pnpm --filter @sub-rosa/web typecheck",
     "grant-scoring:test": "pnpm --filter @sub-rosa/grant-scoring-pilot test",
     "grant-scoring:start": "pnpm --filter @sub-rosa/grant-scoring-pilot start",
-    "docs:check": "node scripts/check-deploy-docs.mjs"
+    "docs:check": "node scripts/check-deploy-docs.mjs",
+    "docs:check-links": "node scripts/check-links.js"
   }
 }
