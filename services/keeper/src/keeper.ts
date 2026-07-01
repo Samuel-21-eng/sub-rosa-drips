@@ -16,6 +16,7 @@
 
 import type { SubRosaClient } from "@sub-rosa/sdk";
 import { openBid, fetchRoundSignature, type DrandClient } from "@sub-rosa/tlock";
+import type { KeeperTelemetry } from "./telemetry.js";
 
 export type KeeperLogger = (msg: string) => void;
 
@@ -24,6 +25,7 @@ export interface KeeperDeps {
   sdk: SubRosaClient;
   drand: DrandClient;
   log?: KeeperLogger;
+  telemetry?: KeeperTelemetry;
   /** Max seconds to wait for round R. Default 0: act only if R is already out. */
   maxWaitSeconds?: number;
   /** Poll cadence while waiting for R (ms). Default 3000. */
@@ -67,6 +69,21 @@ export function errorMatches(e: unknown, names: string[]): boolean {
   return names.some((n) => blob.includes(n));
 }
 
+export function errorCode(e: unknown): string | undefined {
+  if (e && typeof e === "object") {
+    if (typeof (e as any).code === "string") return (e as any).code;
+    if (e instanceof Error) {
+      const match = e.message.match(/([A-Za-z0-9_]+)(?:\(|$)/);
+      return match?.[1];
+    }
+  }
+  return undefined;
+}
+
+function emitTelemetry(deps: KeeperDeps, event: Parameters<KeeperTelemetry["emit"][0]>[0]) {
+  deps.telemetry?.emit(event);
+}
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Wait until Drand round R should be published. Returns false if R is still in
@@ -84,6 +101,13 @@ export async function waitForRound(
     if (Date.now() >= giveUpAtMs) return false;
     const remainS = Math.ceil((publishAtMs - Date.now()) / 1000);
     log(`waiting ~${remainS}s for Drand round ${round}…`);
+    emitTelemetry(deps, {
+      event: "retry",
+      status: "waiting",
+      action: "wait-for-drand",
+      round: round.toString(),
+      message: `waiting for Drand round ${round}`,
+    });
     await sleep(Math.min(pollMs, Math.max(250, publishAtMs - Date.now())));
   }
   return true;
@@ -106,6 +130,13 @@ export async function keepRound(
 
   let round = await sdk.getRound(rid);
   log(`round ${rid}: status=${round.status.tag} R=${round.reveal_round}`);
+  emitTelemetry(deps, {
+    event: "tick-start",
+    status: "in-progress",
+    round: rid.toString(),
+    action: "keep-round",
+    message: `round ${rid} status ${round.status.tag}`,
+  });
 
   // ── Phase A: open the reveal window with R's real Drand signature ──────
   if (round.status.tag === "Open") {
@@ -113,6 +144,13 @@ export async function keepRound(
     const available = await waitForRound(deps, R);
     if (!available) {
       log(`Drand round ${R} not published yet; nothing to open this pass`);
+      emitTelemetry(deps, {
+        event: "reveal-open",
+        status: "skipped",
+        round: rid.toString(),
+        action: "open_reveal",
+        message: `Drand round ${R} not published yet`,
+      });
       result.finalStatus = round.status.tag;
       return result;
     }
@@ -139,9 +177,28 @@ export async function keepRound(
       await sdk.openReveal(rid, signature);
       result.openedReveal = true;
       log(`open_reveal OK (round ${rid} via Drand R=${R})`);
+      emitTelemetry(deps, {
+        event: "reveal-open",
+        status: "success",
+        round: rid.toString(),
+        action: "open_reveal",
+        message: `opened reveal with Drand R=${R}`,
+      });
     } catch (e) {
       if (errorMatches(e, IDEMPOTENT_OPEN)) {
         log(`open_reveal already done (${errorName(e)}); continuing`);
+        emitTelemetry(deps, {
+          event: "reveal-open",
+          status: "skipped",
+          round: rid.toString(),
+          action: "open_reveal",
+          message: `already opened (${errorName(e)})`,
+          error: {
+            name: errorName(e),
+            message: String(e instanceof Error ? e.message : JSON.stringify(e)),
+            code: errorCode(e),
+          },
+        });
       } else {
         throw e;
       }
@@ -192,16 +249,37 @@ export async function keepRound(
         });
         result.revealed.push(bidder);
         log(`revealed ${bidder} = ${opened.value}`);
+        emitTelemetry(deps, {
+          event: "reveal",
+          status: "success",
+          round: rid.toString(),
+          action: "reveal_bid",
+          message: `revealed bidder ${bidder}`,
+          details: { bidder, value: opened.value.toString() },
+        });
       } catch (e) {
-        if (errorMatches(e, IDEMPOTENT_REVEAL)) {
-          result.skipped.push({ bidder, reason: "already revealed (race)" });
-        } else if (errorMatches(e, ["HashMismatch"])) {
-          // A reveal that does not hash to H is rejected by the contract; the
-          // canonical value is whatever we decrypted, so this only happens for a
-          // corrupt seal — record and move on.
-          result.skipped.push({ bidder, reason: "hash mismatch (corrupt seal)" });
-        } else if (errorMatches(e, ["RevealWindowClosed"])) {
-          result.skipped.push({ bidder, reason: "reveal window closed" });
+        const reason = errorMatches(e, IDEMPOTENT_REVEAL)
+          ? "already revealed (race)"
+          : errorMatches(e, ["HashMismatch"])
+          ? "hash mismatch (corrupt seal)"
+          : errorMatches(e, ["RevealWindowClosed"])
+          ? "reveal window closed"
+          : undefined;
+        if (reason) {
+          result.skipped.push({ bidder, reason });
+          emitTelemetry(deps, {
+            event: "reveal-skip",
+            status: "skipped",
+            round: rid.toString(),
+            action: "reveal_bid",
+            message: reason,
+            details: { bidder },
+            error: {
+              name: errorName(e),
+              message: String(e instanceof Error ? e.message : JSON.stringify(e)),
+              code: errorCode(e),
+            },
+          });
         } else {
           throw e;
         }
@@ -210,9 +288,28 @@ export async function keepRound(
     round = await sdk.getRound(rid);
   } else if (round.status.tag !== "Open") {
     log(`round ${rid} is ${round.status.tag}; nothing to reveal`);
+    emitTelemetry(deps, {
+      event: "reveal-skip",
+      status: "skipped",
+      round: rid.toString(),
+      action: "reveal_bid",
+      message: `round ${rid} is ${round.status.tag}; nothing to reveal`,
+    });
   }
 
   result.finalStatus = round.status.tag;
+  emitTelemetry(deps, {
+    event: "tick-end",
+    status: "completed",
+    round: rid.toString(),
+    action: "keep-round",
+    message: `keepRound finished ${round.status.tag}`,
+    details: {
+      openedReveal: result.openedReveal,
+      revealed: result.revealed.length,
+      skipped: result.skipped.length,
+    },
+  });
   return result;
 }
 
@@ -247,6 +344,13 @@ export async function closeRound(
 
   let round = await sdk.getRound(rid);
   log(`round ${rid}: status=${round.status.tag} (close)`);
+  emitTelemetry(deps, {
+    event: "tick-start",
+    status: "in-progress",
+    round: rid.toString(),
+    action: "close-round",
+    message: `round ${rid} status ${round.status.tag} for close`,
+  });
 
   // ── Phase C: clear once the reveal window has closed ──────────────────
   if (round.status.tag === "Revealing") {
@@ -263,12 +367,39 @@ export async function closeRound(
       if (winner === undefined) {
         result.voided = true;
         log(`cleared → no valid bids; round voided + refunded`);
+        emitTelemetry(deps, {
+          event: "void",
+          status: "success",
+          round: rid.toString(),
+          action: "clear",
+          message: "round voided after clear because no valid bids",
+        });
       } else {
         log(`cleared → winner ${winner}`);
+        emitTelemetry(deps, {
+          event: "clear",
+          status: "success",
+          round: rid.toString(),
+          action: "clear",
+          message: `winner ${winner}`,
+          details: { winner },
+        });
       }
     } catch (e) {
       if (errorMatches(e, ["AlreadyCleared", "RevealStillOpen", "WrongStatus", "RoundVoided"])) {
         result.skipped.push(`clear skipped: ${errorName(e)}`);
+        emitTelemetry(deps, {
+          event: "clear",
+          status: "skipped",
+          round: rid.toString(),
+          action: "clear",
+          message: `clear skipped: ${errorName(e)}`,
+          error: {
+            name: errorName(e),
+            message: String(e instanceof Error ? e.message : JSON.stringify(e)),
+            code: errorCode(e),
+          },
+        });
       } else {
         throw e;
       }
@@ -282,9 +413,28 @@ export async function closeRound(
       await sdk.settle(rid);
       result.settled = true;
       log(`settled round ${rid}`);
+      emitTelemetry(deps, {
+        event: "settle",
+        status: "success",
+        round: rid.toString(),
+        action: "settle",
+        message: `settled round ${rid}`,
+      });
     } catch (e) {
       if (errorMatches(e, ["AlreadySettled", "NotCleared", "WrongStatus"])) {
         result.skipped.push(`settle skipped: ${errorName(e)}`);
+        emitTelemetry(deps, {
+          event: "settle",
+          status: "skipped",
+          round: rid.toString(),
+          action: "settle",
+          message: `settle skipped: ${errorName(e)}`,
+          error: {
+            name: errorName(e),
+            message: String(e instanceof Error ? e.message : JSON.stringify(e)),
+            code: errorCode(e),
+          },
+        });
       } else {
         throw e;
       }
@@ -292,8 +442,22 @@ export async function closeRound(
     round = await sdk.getRound(rid);
   } else if (round.status.tag === "Settled") {
     result.skipped.push("already settled");
+    emitTelemetry(deps, {
+      event: "settle",
+      status: "skipped",
+      round: rid.toString(),
+      action: "settle",
+      message: "already settled",
+    });
   } else if (round.status.tag === "Voided") {
     result.skipped.push("voided (escrow refunded at clear)");
+    emitTelemetry(deps, {
+      event: "void",
+      status: "success",
+      round: rid.toString(),
+      action: "settle",
+      message: "round already voided",
+    });
   }
 
   if (result.winner === undefined && round.winner != null) {
@@ -331,6 +495,13 @@ export async function voidIfStale(
   if (round.status.tag !== "Open") {
     result.skipped.push(`status ${round.status.tag}`);
     result.finalStatus = round.status.tag;
+    emitTelemetry(deps, {
+      event: "void",
+      status: "skipped",
+      round: rid.toString(),
+      action: "void-if-stale",
+      message: `status ${round.status.tag}`,
+    });
     return result;
   }
 
@@ -339,6 +510,13 @@ export async function voidIfStale(
   if (now <= voidAfter) {
     result.skipped.push(`void not yet allowed until ${voidAfter}`);
     result.finalStatus = round.status.tag;
+    emitTelemetry(deps, {
+      event: "void",
+      status: "skipped",
+      round: rid.toString(),
+      action: "void-if-stale",
+      message: `void not yet allowed until ${voidAfter}`,
+    });
     return result;
   }
 
@@ -346,9 +524,28 @@ export async function voidIfStale(
     await sdk.void(rid);
     result.voided = true;
     log(`voided round ${rid} (Drand liveness / grace elapsed)`);
+    emitTelemetry(deps, {
+      event: "void",
+      status: "success",
+      round: rid.toString(),
+      action: "void-if-stale",
+      message: "voided stale round",
+    });
   } catch (e) {
     if (errorMatches(e, ["NotVoidable", "WrongStatus", "AlreadyCleared"])) {
       result.skipped.push(errorName(e));
+      emitTelemetry(deps, {
+        event: "void",
+        status: "skipped",
+        round: rid.toString(),
+        action: "void-if-stale",
+        message: errorName(e),
+        error: {
+          name: errorName(e),
+          message: String(e instanceof Error ? e.message : JSON.stringify(e)),
+          code: errorCode(e),
+        },
+      });
     } else {
       throw e;
     }
