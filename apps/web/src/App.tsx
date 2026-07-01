@@ -3,6 +3,7 @@ import { getUseCase } from "./config/useCases";
 import type { UseCaseId } from "./config/useCases";
 import { hashFor, routeFromHash, type RouteState } from "./config/routing";
 import { ArchitecturePage } from "./pages/ArchitecturePage";
+import { ConfigBanner } from "./components/ConfigBanner";
 import { DemoPage } from "./pages/DemoPage";
 import { LandingPage } from "./pages/LandingPage";
 import { ToastProvider } from "./ui/Toast";
