@@ -6,6 +6,8 @@ import { ArchitecturePage } from "./pages/ArchitecturePage";
 import { DemoPage } from "./pages/DemoPage";
 import { LandingPage } from "./pages/LandingPage";
 import { ToastProvider } from "./ui/Toast";
+import { SubRosaProvider } from "@sub-rosa/react";
+import { RPC_URL } from "./lib/chain";
 
 export default function App() {
   const [route, setRoute] = useState<RouteState>(routeFromHash);
@@ -25,20 +27,22 @@ export default function App() {
 
   return (
     <ToastProvider>
-      {route.page === "landing" ? (
-        <LandingPage
-          onDemo={() => navigate("demo", "grants")}
-          onCase={(id) => navigate("demo", id)}
-        />
-      ) : route.page === "architecture" ? (
-        <ArchitecturePage goHome={() => navigate("landing")} />
-      ) : (
-        <DemoPage
-          active={active}
-          setActive={(id) => navigate("demo", id)}
-          goHome={() => navigate("landing")}
-        />
-      )}
+      <SubRosaProvider config={{ rpcUrl: RPC_URL, networkPassphrase: "Test SDF Network ; September 2015" }}>
+        {route.page === "landing" ? (
+          <LandingPage
+            onDemo={() => navigate("demo", "grants")}
+            onCase={(id) => navigate("demo", id)}
+          />
+        ) : route.page === "architecture" ? (
+          <ArchitecturePage goHome={() => navigate("landing")} />
+        ) : (
+          <DemoPage
+            active={active}
+            setActive={(id) => navigate("demo", id)}
+            goHome={() => navigate("landing")}
+          />
+        )}
+      </SubRosaProvider>
     </ToastProvider>
   );
 }
